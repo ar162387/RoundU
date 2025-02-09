@@ -1,0 +1,218 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, Alert, Text, TouchableOpacity } from 'react-native';
+import MapView, { Marker, Polygon } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { Modalize } from 'react-native-modalize';
+import { MaterialIcons } from '@expo/vector-icons';
+
+const ServiceAreaScreen = () => {
+    const [location, setLocation] = useState(null);
+    const [polygons, setPolygons] = useState([]);
+    const [currentPolygon, setCurrentPolygon] = useState([]);
+    const modalizeRef = useRef(null);
+
+    // Get user location on mount
+    useEffect(() => {
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission to access location was denied');
+                return;
+            }
+
+            let location = await Location.getCurrentPositionAsync({});
+            setLocation(location.coords);
+        })();
+    }, []);
+
+    // Handle map long press
+    const handleMapLongPress = (e) => {
+        const newCoordinate = e.nativeEvent.coordinate;
+        setCurrentPolygon([...currentPolygon, newCoordinate]);
+    };
+
+    // Undo last marker
+    const handleUndo = () => {
+        if (currentPolygon.length > 0) {
+            const newPoints = [...currentPolygon];
+            newPoints.pop();
+            setCurrentPolygon(newPoints);
+        }
+    };
+
+    // Add current polygon to list
+    const handleAddPolygon = () => {
+        if (currentPolygon.length < 3) {
+            Alert.alert('Minimum 3 points required');
+            return;
+        }
+        setPolygons([...polygons, { id: Date.now(), coordinates: currentPolygon }]);
+        setCurrentPolygon([]);
+    };
+
+    // Remove a polygon
+    const handleRemovePolygon = (id) => {
+        setPolygons(polygons.filter(polygon => polygon.id !== id));
+    };
+
+    // Save all polygons
+    const handleSave = () => {
+        console.log('Saved polygons:', polygons);
+        Alert.alert('Polygons saved (check console)');
+    };
+
+    if (!location) {
+        return null; // Or loading screen
+    }
+
+    return (
+        <View style={styles.container}>
+            <MapView
+                style={styles.map}
+                initialRegion={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                }}
+                onLongPress={handleMapLongPress}
+            >
+                {/* Render existing polygons */}
+                {polygons.map((polygon) => (
+                    <Polygon
+                        key={polygon.id}
+                        coordinates={polygon.coordinates}
+                        fillColor="rgba(0,128,255,0.3)"
+                        strokeColor="rgba(0,128,255,0.8)"
+                        strokeWidth={2}
+                    />
+                ))}
+
+                {/* Render current polygon markers */}
+                {currentPolygon.map((point, index) => (
+                    <Marker
+                        key={`current-${index}`}
+                        coordinate={point}
+                        title={`Point ${index + 1}`}
+                    />
+                ))}
+
+                {/* Render current polygon preview */}
+                {currentPolygon.length >= 2 && (
+                    <Polygon
+                        coordinates={currentPolygon}
+                        fillColor="rgba(255,0,0,0.3)"
+                        strokeColor="rgba(255,0,0,0.8)"
+                        strokeWidth={2}
+                    />
+                )}
+            </MapView>
+
+            <Modalize
+                ref={modalizeRef}
+                alwaysOpen={150}
+                handlePosition="inside"
+                modalStyle={styles.modal}
+            >
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                        style={[styles.button, currentPolygon.length === 0 && styles.disabledButton]}
+                        onPress={handleUndo}
+                        disabled={currentPolygon.length === 0}
+                    >
+                        <Text style={styles.buttonText}>Undo</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.button, currentPolygon.length < 3 && styles.disabledButton]}
+                        onPress={handleAddPolygon}
+                        disabled={currentPolygon.length < 3}
+                    >
+                        <Text style={styles.buttonText}>Add Polygon</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.button, polygons.length === 0 && styles.disabledButton]}
+                        onPress={handleSave}
+                        disabled={polygons.length === 0}
+                    >
+                        <Text style={styles.buttonText}>Save</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={styles.polygonsList}>
+                    {polygons.map((polygon, index) => (
+                        <View key={polygon.id} style={styles.polygonCard}>
+                            <Text style={styles.polygonTitle}>Shape {index + 1}</Text>
+                            <TouchableOpacity
+                                style={styles.removeButton}
+                                onPress={() => handleRemovePolygon(polygon.id)}
+                            >
+                                <MaterialIcons name="close" size={20} color="white" />
+                            </TouchableOpacity>
+                        </View>
+                    ))}
+                </View>
+            </Modalize>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    map: {
+        flex: 1,
+    },
+    modal: {
+        padding: 20,
+        backgroundColor: '#f5f5f5',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    button: {
+        backgroundColor: '#007bff',
+        padding: 10,
+        borderRadius: 5,
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    disabledButton: {
+        backgroundColor: '#cccccc',
+    },
+    buttonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
+    polygonsList: {
+        marginTop: 10,
+    },
+    polygonCard: {
+        backgroundColor: '#007bff',
+        borderColor: '#0056b3',
+        borderWidth: 2,
+        borderRadius: 5,
+        padding: 15,
+        marginBottom: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    polygonTitle: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    removeButton: {
+        backgroundColor: '#ff4444',
+        borderRadius: 12,
+        width: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+});
+
+export default ServiceAreaScreen;
