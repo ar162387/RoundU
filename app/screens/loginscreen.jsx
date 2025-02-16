@@ -22,7 +22,7 @@ const LoginPage = ({ navigation }) => {
     console.log("Sending login request with payload:", payload); // Debug log
 
     try {
-      const response = await axios.post("http://192.168.100.233:5001/login", payload, {
+      const response = await axios.post("http://192.168.100.233:5001/api/auth/login", payload, {
         headers: { "Content-Type": "application/json" }
       });
 

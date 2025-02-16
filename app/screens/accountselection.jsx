@@ -37,7 +37,7 @@ const OnboardingScreen = ({ navigation, route }) => {
         console.log("Sending signup request with payload:", payload);
 
         try {
-            const response = await axios.post("http://192.168.100.233:5001/signup", payload, {
+            const response = await axios.post("http://192.168.100.233:5001/api/auth/signup", payload, {
                 headers: { "Content-Type": "application/json" }
             });
 
