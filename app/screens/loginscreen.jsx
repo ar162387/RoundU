@@ -5,10 +5,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import InputField from "../components/inputfield";
 import Button from "../components/button";
 
+import Constants from "expo-constants";
+
+
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const API_BASE_URL = Constants.expoConfig?.extra?.API_URL
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -16,13 +21,15 @@ const LoginPage = ({ navigation }) => {
       return;
     }
 
+
+
     setLoading(true);
     const payload = { email: email.trim(), password: password };
 
     console.log("Sending login request with payload:", payload); // Debug log
 
     try {
-      const response = await axios.post("http://192.168.100.233:5001/api/auth/login", payload, {
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, payload, {
         headers: { "Content-Type": "application/json" }
       });
 

@@ -5,6 +5,7 @@ import Button from '../components/button';
 import InputField from '../components/inputfield';
 
 
+
 const SignUpPage = ({ navigation }) => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");

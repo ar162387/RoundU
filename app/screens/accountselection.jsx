@@ -4,6 +4,10 @@ import Button from '../components/button';
 import Icon from 'react-native-vector-icons/Entypo'; // Import the desired icon set
 import Icons from 'react-native-vector-icons/SimpleLineIcons';
 import axios from "axios"; // Import Axios
+import Constants from "expo-constants";
+
+
+const API_BASE_URL = Constants.expoConfig?.extra?.API_URL
 
 const OnboardingScreen = ({ navigation, route }) => {
     const { name, email, password } = route.params;
@@ -37,7 +41,7 @@ const OnboardingScreen = ({ navigation, route }) => {
         console.log("Sending signup request with payload:", payload);
 
         try {
-            const response = await axios.post("http://192.168.100.233:5001/api/auth/signup", payload, {
+            const response = await axios.post(`${API_BASE_URL}/api/auth/signup`, payload, {
                 headers: { "Content-Type": "application/json" }
             });
 
